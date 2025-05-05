@@ -11,12 +11,21 @@ body {
     color: #fff;
 }
 
+.form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+
 .box {
     background: #fff;
     padding: 40px;
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     width: 350px;
+    text-align: center;
     transition: all 0.3s ease-in-out;
 }
 
@@ -42,7 +51,7 @@ input[type="submit"],
 .supergreen-btn {
     width: 100%;
     padding: 12px;
-    color: #fff;
+    color: #0a0a0a;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -84,16 +93,16 @@ input[type="submit"]:hover {
     text-decoration: underline;
 }
 
-.register-link {
-    display: none;
-    text-align: center;
-    margin-top: 20px;
+.logo-container {
+    margin-bottom: 20px;
 }
 
-/* Transition effect when switching between login and register */
-.form-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
+.logo-img {
+    width: 120px;
+    height: 120px; /* Ensure the height is the same as width for a perfect circle */
+    border-radius: 50%; /* This makes the image circular */
+    object-fit: cover; /* Ensures the image does not stretch */
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 }

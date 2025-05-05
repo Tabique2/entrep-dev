@@ -2,93 +2,133 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login & Create Account</title>
+    <title>Login</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        /* Base styling */
         body {
             margin: 0;
             padding: 0;
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(to right, #3498db, #8e44ad); /* Gradient background */
+            background-image: url('platebackground.png'); /* Set image as background */
+            background-size: cover; /* Ensure image covers the entire screen */
+            background-position: center; /* Center the image */
+            background-repeat: no-repeat; /* Prevent repeating the image */
+            background-attachment: fixed; /* Keep the background fixed when scrolling */
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             color: #fff;
+            padding-top: 40px; /* Extra space above */
+            padding-bottom: 40px; /* Extra space below */
         }
+
         .box {
-            background: #fff;
-            padding: 40px;
+            background: rgba(255, 255, 255, 0.8); /* Semi-transparent white background for the form */
+            padding: 40px; /* Increased padding for better spacing */
             border-radius: 10px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            width: 350px;
-            transition: all 0.3s ease-in-out;
-        }
-        h2 {
+            width: 300px; /* Set width for the form */
+            height: auto; /* Adjust height */
             text-align: center;
-            margin-bottom: 20px;
-            color: #333;
+            margin: 0 20px; /* Ensure spacing on both sides */
         }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px; /* Increased margin for spacing */
+            font-size: 22px;
+        }
+
         input[type="text"],
-        input[type="email"],
         input[type="password"] {
             width: 100%;
             padding: 12px;
-            margin-bottom: 15px;
+            margin-bottom: 20px; /* Increased margin */
             border: 1px solid #ccc;
             border-radius: 5px;
-            box-sizing: border-box;
-            font-size: 16px;
+            font-size: 14px;
         }
-        input[type="submit"],
-        .supergreen-btn {
+
+        input[type="submit"] {
             width: 100%;
             padding: 12px;
             color: #fff;
+            background: #27ae60;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        input[type="submit"] {
-            background: #3498db;
-            transition: background 0.3s ease;
-        }
-        input[type="submit"]:hover {
-            background: #2980b9;
-        }
-        .supergreen-btn {
-            background: #27ae60;
-            transition: background 0.3s ease;
-        }
-        .supergreen-btn:hover {
-            background: #2ecc71;
-        }
-        .toggle {
-            text-align: center;
-            margin-top: 10px;
             font-size: 14px;
         }
-        .toggle a {
-            color: #3498db;
+
+        input[type="submit"]:hover {
+            background: #2ecc71;
+        }
+
+        .logo-container img {
+            width: 120px; /* Adjusted logo size */
+            height: auto;
+            margin-bottom: 25px; /* Increased space below logo */
+        }
+
+        .signup-link {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .signup-link a {
+            color: #27ae60;
             text-decoration: none;
             font-weight: bold;
         }
-        .toggle a:hover {
-            text-decoration: underline;
+
+        .signup-link a:hover {
+            color: #2ecc71;
         }
-        .register-link {
-            display: none;
-            text-align: center;
+
+        .social-buttons {
             margin-top: 20px;
-        }
-        /* Transition effect when switching between login and register */
-        .form-container {
+            font-size: 14px;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .social-buttons a {
+            display: inline-flex;
             align-items: center;
-            height: 100%;
+            justify-content: center;
+            width: 48%;
+            height: 40px;
+            border-radius: 5px;
+            text-decoration: none;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .social-buttons img {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            object-fit: contain;
+        }
+
+        .gmail-btn {
+            background-color: #db4437;
+        }
+
+        .facebook-btn {
+            background-color: #4267b2;
+        }
+
+        .or-container {
+            margin: 20px 0;
+            font-size: 16px;
+        }
+
+        .or-container span {
+            color: #333;
         }
     </style>
 </head>
@@ -97,84 +137,38 @@
 <div class="form-container">
     <!-- Login Box -->
     <div class="box" id="loginBox">
+        <div class="logo-container">
+            <img src="platelogin.png" alt="Login Logo" class="logo-img">
+        </div>
         <h2>Login</h2>
-        <form action="index.php" method="post" id="loginForm">
-            <input type="text" name="login_name" placeholder="Full Name" required>
-            <input type="email" name="login_email" placeholder="Email" required>
+        <form action="index.php" method="post">
+            <input type="text" name="login_username" placeholder="Username" required>
             <input type="password" name="login_password" placeholder="Password" required>
             <input type="submit" name="login" value="Login">
         </form>
-        
-        <!-- Create Account Button -->
-        <button type="button" id="showRegisterLink" class="supergreen-btn">Create Account</button>
-        
-        <div class="toggle">
-            <a href="javascript:void(0)" onclick="toggleForm('login')">Already have an account?</a>
+        <!-- Sign Up Link -->
+        <div class="signup-link">
+            <p>Don't have an account? <a href="register.php">Sign Up</a></p>
         </div>
-    </div>
-
-    <!-- Register Box -->
-    <div class="box" id="registerBox" style="display: none;">
-        <h2>Create Account</h2>
-        <form action="index.php" method="post" id="registerForm">
-            <input type="text" name="register_name" placeholder="Full Name" required>
-            <input type="email" name="register_email" placeholder="Email" required>
-            <input type="password" name="register_password" placeholder="Password" required>
-            <input type="submit" name="register" value="Register">
-        </form>
         
-        <div class="toggle">
-            <a href="javascript:void(0)" onclick="toggleForm('register')">Already have an account? Login here.</a>
+        <!-- OR Section -->
+        <div class="or-container">
+            <span>OR</span>
+        </div>
+
+        <!-- Social Media Signup Options -->
+        <div class="social-buttons">
+            <a href="https://accounts.google.com" class="gmail-btn">
+                <img src="Googleicon.jpg" alt="Gmail Icon">
+                <span>Google</span>
+            </a>
+            <a href="https://www.facebook.com" class="facebook-btn">
+                <img src="facebook logo.png" alt="Facebook Icon">
+                <span>Facebook</span>
+            </a>
         </div>
     </div>
 </div>
-
-<script>
-    // Toggle between login and register forms
-    function toggleForm(form) {
-        if (form === 'login') {
-            document.getElementById('loginBox').style.display = 'block';
-            document.getElementById('registerBox').style.display = 'none';
-        } else if (form === 'register') {
-            document.getElementById('loginBox').style.display = 'none';
-            document.getElementById('registerBox').style.display = 'block';
-        }
-    }
-
-    // Show Register Form when "Create Account" is clicked
-    document.getElementById('showRegisterLink').addEventListener('click', function() {
-        toggleForm('register');  // Switch to Register Form
-    });
-</script>
-
-<?php
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Handle Login
-    if (isset($_POST["login"])) {
-        $name = $_POST["login_name"];
-        $email = $_POST["login_email"];
-        $pass = $_POST["login_password"];
-
-        // Placeholder check for login
-        if ($email == "admin@example.com" && $pass == "123456") {
-            echo "<script>alert('Welcome back, $name! Login Successful.');</script>";
-        } else {
-            echo "<script>alert('Invalid credentials, $name.');</script>";
-        }
-    }
-
-    // Handle Registration
-    if (isset($_POST["register"])) {
-        $name = $_POST["register_name"];
-        $email = $_POST["register_email"];
-        $pass = $_POST["register_password"];
-
-        // Placeholder for registration (you would typically save this data to a database)
-        echo "<script>alert('Account Created Successfully for $name!');</script>";
-        // You can redirect or process further here (e.g., saving user data in a database)
-    }
-}
-?>
 
 </body>
 </html>
