@@ -4,8 +4,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $username = $_POST["register_username"];
         $password = $_POST["register_password"];
 
-        // Placeholder logic — in production, save this to a database
-        echo "<script>alert('Account Created Successfully for $username!');</script>";
+        // Hash the password before storing
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+        // Database connection details
+        $host = "localhost";
+        $db = "ep";
+        $user = "root";
+        $pass = ""; // Change if your MySQL password is different
+
+        // Create connection
+        $conn = new mysqli($host, $user, $pass, $db);
+
+        // Check connection
+        if ($conn->connect_error) {
+            die("Connection failed: " . $conn->connect_error);
+        }
+
+        // Insert data into users table
+        $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+        $stmt->bind_param("ss", $username, $hashed_password);
+
+        if ($stmt->execute()) {
+            echo "<script>alert('Account created successfully for $username!');</script>";
+        } else {
+            echo "<script>alert('Error: " . $stmt->error . "');</script>";
+        }
+
+        $stmt->close();
+        $conn->close();
     }
 }
 ?>
@@ -116,8 +143,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             height: 40px;
             border-radius: 5px;
             text-decoration: none;
-            background-color: #fff; /* White background */
-            color: #333; /* Dark text for contrast */
+            background-color: #fff;
+            color: #333;
             font-weight: bold;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
