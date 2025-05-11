@@ -21,18 +21,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $username = $_POST["login_username"];
         $password = $_POST["login_password"];
 
-        $stmt = $conn->prepare("SELECT password FROM users WHERE username = ?");
+        // Fetch both password and role
+        $stmt = $conn->prepare("SELECT password, role FROM users WHERE username = ?");
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $stmt->store_result();
 
         if ($stmt->num_rows === 1) {
-            $stmt->bind_result($hashed_password);
+            $stmt->bind_result($hashed_password, $role);
             $stmt->fetch();
 
             if (password_verify($password, $hashed_password)) {
                 $_SESSION["username"] = $username;
-                echo "<script>alert('Welcome back, $username! Login Successful.'); window.location.href='dashboard.php';</script>";
+                $_SESSION["role"] = $role;
+
+                if ($role === 'admin') {
+                    header("Location: admin_dashboard.php");
+                } else {
+                    header("Location: dashboard.php");
+                }
+                exit();
             } else {
                 echo "<script>alert('Invalid password.'); window.location.href='login.php';</script>";
             }

@@ -1,174 +1,176 @@
+<?php
+session_start();
+error_reporting(E_ALL);
+ini_set("display_errors", 1);
+
+// Database connection
+$host = "localhost";
+$db = "ep";
+$user = "root";
+$pass = "";
+
+$conn = new mysqli($host, $user, $pass, $db);
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
+    // 1. CAPTCHA Verification
+    $recaptchaResponse = $_POST['g-recaptcha-response'];
+    $secretKey = '6LfDezQrAAAAALzoUGd3WZd2Ct0ORXedwjBO4Gqn';
+    $verifyUrl = "https://www.google.com/recaptcha/api/siteverify";
+    $verifyResponse = file_get_contents("$verifyUrl?secret=$secretKey&response=$recaptchaResponse");
+    $responseData = json_decode($verifyResponse);
+
+    if (!$responseData->success) {
+        echo "<script>alert('Captcha verification failed. Please try again.'); window.location.href='login.php';</script>";
+        exit();
+    }
+
+    // 2. Credential Verification
+    $username = $_POST["login_username"];
+    $password = $_POST["login_password"];
+
+    // Fetch both password and role from the database
+    $stmt = $conn->prepare("SELECT password, role FROM users WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows === 1) {
+        $stmt->bind_result($hashed_password, $role);
+        $stmt->fetch();
+
+        // Handle admin login separately for direct password check
+        if ($username == 'admin' && $password == 'adminonly') {
+            $_SESSION["username"] = $username;
+            $_SESSION["role"] = 'admin';
+            header("Location: admin_dashboard.php");
+            exit();
+        }
+
+        // Check password for user login using password_verify()
+        if (password_verify($password, $hashed_password)) {
+            $_SESSION["username"] = $username;
+            $_SESSION["role"] = $role;
+
+            // Redirect based on role
+            if ($role === 'admin') {
+                header("Location: admin_dashboard.php");
+                exit();
+            } else {
+                header("Location: dashboard.php");
+                exit();
+            }
+        } else {
+            echo "<script>alert('Invalid password.'); window.location.href='login.php';</script>";
+        }
+    } else {
+        echo "<script>alert('User not found.'); window.location.href='login.php';</script>";
+    }
+
+    $stmt->close();
+    $conn->close();
+}
+?>
+
+<!-- HTML Login Form -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
-    <link rel="stylesheet" href="style.css">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         body {
-            margin: 0;
-            padding: 0;
             font-family: 'Poppins', sans-serif;
-            background-image: url('platebackground.png'); /* Set image as background */
-            background-size: cover; /* Ensure image covers the entire screen */
-            background-position: center; /* Center the image */
-            background-repeat: no-repeat; /* Prevent repeating the image */
-            background-attachment: fixed; /* Keep the background fixed when scrolling */
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-image: url('platebackground.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             height: 100vh;
             color: #fff;
-            padding-top: 40px; /* Extra space above */
-            padding-bottom: 40px; /* Extra space below */
-        }
-
-        .box {
-            background: rgba(255, 255, 255, 0.8); /* Semi-transparent white background for the form */
-            padding: 40px; /* Increased padding for better spacing */
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            width: 300px; /* Set width for the form */
-            height: auto; /* Adjust height */
-            text-align: center;
-            margin: 0 20px; /* Ensure spacing on both sides */
-        }
-
-        h2 {
-            color: #333;
-            margin-bottom: 20px; /* Increased margin for spacing */
-            font-size: 22px;
-        }
-
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 20px; /* Increased margin */
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        input[type="submit"] {
-            width: 100%;
-            padding: 12px;
-            color: #fff;
-            background: #27ae60;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        input[type="submit"]:hover {
-            background: #2ecc71;
-        }
-
-        .logo-container img {
-            width: 120px; /* Adjusted logo size */
-            height: auto;
-            margin-bottom: 25px; /* Increased space below logo */
-        }
-
-        .signup-link {
-            margin-top: 20px;
-            font-size: 14px;
-        }
-
-        .signup-link a {
-            color: #27ae60;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .signup-link a:hover {
-            color: #2ecc71;
-        }
-
-        .social-buttons {
-            margin-top: 20px;
-            font-size: 14px;
             display: flex;
-            justify-content: space-between;
-            gap: 10px;
+            justify-content: center;
+            align-items: center;
         }
-
-        .social-buttons a {
-            display: inline-flex;
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2rem;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        .logo-container img {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .btn-social {
+            display: flex;
             align-items: center;
             justify-content: center;
-            width: 48%;
-            height: 40px;
-            border-radius: 5px;
+            gap: 8px;
+            color: white;
             text-decoration: none;
-            background-color: #fff;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 15px;
+            border-radius: 5px;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
         }
-
-        .social-buttons img {
-            width: 20px;
-            height: 20px;
-            margin-right: 8px;
-            object-fit: contain;
-        }
-
         .gmail-btn {
             background-color: #db4437;
         }
-
         .facebook-btn {
             background-color: #4267b2;
         }
-
-        .or-container {
-            margin: 20px 0;
-            font-size: 16px;
-        }
-
-        .or-container span {
-            color: #333;
+        .btn-social img {
+            width: 20px;
+            height: 20px;
         }
     </style>
 </head>
 <body>
 
-<div class="form-container">
-    <!-- Login Box -->
-    <div class="box" id="loginBox">
-        <div class="logo-container">
-            <img src="platelogin.png" alt="Login Logo" class="logo-img">
+<div class="card text-dark text-center">
+    <div class="logo-container">
+        <img src="platelogin.png" alt="Login Logo">
+    </div>
+    <h2 class="mb-3">Login</h2>
+    <form action="login.php" method="post">
+        <div class="mb-3">
+            <input type="text" name="login_username" class="form-control" placeholder="Username" required>
         </div>
-        <h2>Login</h2>
-        <form action="index.php" method="post">
-            <input type="text" name="login_username" placeholder="Username" required>
-            <input type="password" name="login_password" placeholder="Password" required>
-            <input type="submit" name="login" value="Login">
-        </form>
-        <!-- Sign Up Link -->
-        <div class="signup-link">
-            <p>Don't have an account? <a href="register.php">Sign Up</a></p>
+        <div class="mb-3">
+            <input type="password" name="login_password" class="form-control" placeholder="Password" required>
         </div>
-        
-        <!-- OR Section -->
-        <div class="or-container">
-            <span>OR</span>
+        <div class="mb-3 d-flex justify-content-center">
+            <div class="g-recaptcha" data-sitekey="6LfDezQrAAAAAAYlNZx5iLWnZEMDztRcwYz3a5ns"></div>
         </div>
+        <button type="submit" name="login" class="btn btn-success w-100">Login</button>
+    </form>
 
-        <!-- Social Media Signup Options -->
-        <div class="social-buttons">
-            <a href="https://accounts.google.com" class="gmail-btn">
-                <img src="Googleicon.jpg" alt="Gmail Icon">
-                <span>Google</span>
-            </a>
-            <a href="https://www.facebook.com" class="facebook-btn">
-                <img src="facebook logo.png" alt="Facebook Icon">
-                <span>Facebook</span>
-            </a>
-        </div>
+    <div class="mt-3">
+        <p>Don't have an account? <a href="register.php" class="text-success fw-bold">Sign Up</a></p>
+    </div>
+
+    <hr>
+
+    <div class="d-flex flex-column">
+        <a href="https://accounts.google.com" class="btn-social gmail-btn">
+            <img src="Googleicon.jpg" alt="Gmail Icon"> Google
+        </a>
+        <a href="https://www.facebook.com" class="btn-social facebook-btn">
+            <img src="facebook logo.png" alt="Facebook Icon"> Facebook
+        </a>
     </div>
 </div>
 
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

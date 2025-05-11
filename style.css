@@ -106,3 +106,129 @@ input[type="submit"]:hover {
     margin-left: auto;
     margin-right: auto;
 }
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', sans-serif;
+    background-image: url('platebackground.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #fff;
+    padding-top: 40px;
+    padding-bottom: 40px;
+}
+
+.box {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    height: auto;
+    text-align: center;
+    margin: 0 20px;
+}
+
+h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 22px;
+}
+
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+input[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    color: #fff;
+    background: #27ae60;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+input[type="submit"]:hover {
+    background: #2ecc71;
+}
+
+.logo-container img {
+    width: 120px;
+    height: auto;
+    margin-bottom: 25px;
+}
+
+.signup-link {
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.signup-link a {
+    color: #27ae60;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.signup-link a:hover {
+    color: #2ecc71;
+}
+
+.social-buttons {
+    margin-top: 20px;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.social-buttons a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48%;
+    height: 40px;
+    border-radius: 5px;
+    text-decoration: none;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+.social-buttons img {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    object-fit: contain;
+}
+
+.gmail-btn {
+    background-color: #db4437;
+}
+
+.facebook-btn {
+    background-color: #4267b2;
+}
+
+.or-container {
+    margin: 20px 0;
+    font-size: 16px;
+}
+
+.or-container span {
+    color: #333;
+}
