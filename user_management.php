@@ -10,7 +10,7 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'admin') {
 }
 
 $host = "localhost";
-$db = "ep";
+$db = "enterprise";
 $user = "root";
 $pass = "";
 
@@ -52,18 +52,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['create_user'])) {
     $stmt->close();
 }
 
-// Fetch all users
-$stmt = $conn->prepare("SELECT id, username, role FROM users");
+// Fetch all users along with dietitian information (if they are a dietitian)
+$stmt = $conn->prepare("
+    SELECT u.id, u.username, u.role, d.full_name, d.contact_email
+    FROM users u
+    LEFT JOIN dietitians d ON u.id = d.user_id
+");
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Separate users into admins and regular users
+// Separate users into admins, regular users, and dietitians
 $admins = [];
 $users = [];
+$dietitians = [];
 
 while ($row = $result->fetch_assoc()) {
     if ($row['role'] === 'admin') {
         $admins[] = $row;
+    } elseif ($row['role'] === 'dietitian') {
+        $dietitians[] = $row;
     } else {
         $users[] = $row;
     }
@@ -95,6 +102,7 @@ while ($row = $result->fetch_assoc()) {
                 <select name="new_role" class="form-select" required>
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
+                    <option value="dietitian">Dietitian</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -130,6 +138,40 @@ while ($row = $result->fetch_assoc()) {
                         <?php else: ?>
                             <button class="btn btn-secondary btn-sm" disabled>Protected</button>
                         <?php endif; ?>
+                    </td>
+                </tr>
+            <?php } ?>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Dietitians List -->
+    <div class="card p-4 mt-4">
+        <h4>Dietitians</h4>
+        <table class="table table-bordered text-center">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Full Name</th>
+                    <th>Contact Email</th>
+                    <th width="200">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($dietitians as $dietitian) { ?>
+                <tr>
+                    <td><?= htmlspecialchars($dietitian['id']) ?></td>
+                    <td><?= htmlspecialchars($dietitian['username']) ?></td>
+                    <td><?= ucfirst(htmlspecialchars($dietitian['role'])) ?></td>
+                    <td><?= htmlspecialchars($dietitian['full_name'] ?? '-') ?></td>
+                    <td><?= htmlspecialchars($dietitian['contact_email'] ?? '-') ?></td>
+                    <td>
+                        <a href="edit_user.php?id=<?= $dietitian['id'] ?>" class="btn btn-warning btn-sm">Edit</a>
+                        <a href="user_management.php?delete=<?= $dietitian['id'] ?>"
+                           class="btn btn-danger btn-sm"
+                           onclick="return confirm('Delete this dietitian?');">Delete</a>
                     </td>
                 </tr>
             <?php } ?>

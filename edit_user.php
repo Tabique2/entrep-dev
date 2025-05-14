@@ -33,15 +33,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $new_password = $_POST["password"];
     $new_role = $_POST["role"];
 
+    // If password is provided, hash it and update the password
     if (!empty($new_password)) {
         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
         $stmt = $conn->prepare("UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?");
         $stmt->bind_param("sssi", $new_username, $hashed_password, $new_role, $user_id);
     } else {
+        // If no new password is provided, just update username and role
         $stmt = $conn->prepare("UPDATE users SET username = ?, role = ? WHERE id = ?");
         $stmt->bind_param("ssi", $new_username, $new_role, $user_id);
     }
 
+    // Execute the update query
     if ($stmt->execute()) {
         echo "<script>alert('User updated successfully.'); window.location.href='admin_dashboard.php';</script>";
         exit();
@@ -99,6 +102,7 @@ $conn->close();
             <select name="role" class="form-select" id="role">
                 <option value="user" <?php echo ($role == 'user') ? 'selected' : ''; ?>>User</option>
                 <option value="admin" <?php echo ($role == 'admin') ? 'selected' : ''; ?>>Admin</option>
+                <option value="dietitian" <?php echo ($role == 'dietitian') ? 'selected' : ''; ?>>Dietitian</option>
             </select>
         </div>
         <button type="submit" class="btn btn-success">Update User</button>

@@ -3,30 +3,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST["register"])) {
         $username = $_POST["register_username"];
         $password = $_POST["register_password"];
+        $role = $_POST["role"];
+        $full_name = $_POST["full_name"] ?? '';
+        $contact_email = $_POST["contact_email"] ?? '';
 
-        // Hash the password before storing
+
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        // Database connection details
-        $host = "localhost";
-        $db = "ep";
-        $user = "root";
-        $pass = ""; // Change if your MySQL password is different
-
-        // Create connection
-        $conn = new mysqli($host, $user, $pass, $db);
-
-        // Check connection
+        $conn = new mysqli("localhost", "root", "", "enterprise");
         if ($conn->connect_error) {
             die("Connection failed: " . $conn->connect_error);
         }
 
-        // Insert data into users table
-        $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
-        $stmt->bind_param("ss", $username, $hashed_password);
+        $stmt = $conn->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+        $stmt->bind_param("sss", $username, $hashed_password, $role);
 
         if ($stmt->execute()) {
-            echo "<script>alert('Account created successfully for $username!');</script>";
+            $user_id = $stmt->insert_id;
+
+            if ($role === "dietitian") {
+                $dietStmt = $conn->prepare("INSERT INTO dietitians (user_id, full_name, contact_email) VALUES (?, ?, ?)");
+                $dietStmt->bind_param("iss", $user_id, $full_name, $contact_email);
+
+                $dietStmt->execute();
+                $dietStmt->close();
+            }
+
+            echo "<script>alert('Account created successfully for $username!'); window.location.href='index.php';</script>";
         } else {
             echo "<script>alert('Error: " . $stmt->error . "');</script>";
         }
@@ -41,153 +44,123 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Create Account</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Register</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+        function toggleDietitianFields() {
+            const role = document.getElementById("role").value;
+            const dietitianFields = document.getElementById("dietitianFields");
+            dietitianFields.style.display = (role === "dietitian") ? "block" : "none";
+        }
+    </script>
     <style>
         body {
-            margin: 0;
-            padding: 0;
             font-family: 'Poppins', sans-serif;
-            background-image: url('plateregister.png');
+            background-image: url('image/platebackground.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            background-attachment: fixed;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            color: #fff;
+            margin: 0;
         }
 
-        .box {
-            background: rgba(255, 255, 255, 0.8);
-            padding: 40px;
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
             border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            width: 300px;
-            text-align: center;
-        }
-
-        h2 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 22px;
-        }
-
-        input[type="text"],
-        input[type="password"] {
             width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        input[type="submit"] {
-            width: 100%;
-            padding: 12px;
-            color: #fff;
-            background: #27ae60;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        input[type="submit"]:hover {
-            background: #2ecc71;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
 
         .logo-container img {
             width: 120px;
             height: auto;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
-        .toggle {
-            margin-top: 20px;
-            font-size: 14px;
-        }
-
-        .toggle a {
-            color: #27ae60;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .toggle a:hover {
-            color: #2ecc71;
-        }
-
-        .or-container {
-            margin: 20px 0;
-            font-size: 16px;
-        }
-
-        .or-container span {
-            color: #333;
-        }
-
-        .social-buttons {
+        .btn-social {
             display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-
-        .social-buttons a {
-            display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 48%;
-            height: 40px;
-            border-radius: 5px;
+            gap: 8px;
+            color: white;
             text-decoration: none;
-            background-color: #fff;
-            color: #333;
-            font-weight: bold;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
         }
 
-        .social-buttons img {
+        .gmail-btn {
+            background-color: #db4437;
+        }
+
+        .facebook-btn {
+            background-color: #4267b2;
+        }
+
+        .btn-social img {
             width: 20px;
             height: 20px;
-            margin-right: 8px;
+        }
+
+        #dietitianFields {
+            display: none;
         }
     </style>
 </head>
 <body>
 
-<div class="form-container">
-    <div class="box" id="registerBox">
-        <div class="logo-container">
-            <img src="platelogin.png" alt="Register Logo" class="logo-img">
+<div class="card text-dark text-center">
+    <div class="logo-container">
+        <img src="image/platelogin.png" alt="Register Logo">
+    </div>
+    <h2 class="mb-3">Create Account</h2>
+    <form action="register.php" method="post">
+        <div class="mb-3">
+            <input type="text" name="register_username" class="form-control" placeholder="Username" required>
         </div>
-        <h2>Create Account</h2>
-        <form action="register.php" method="post">
-            <input type="text" name="register_username" placeholder="Username" required>
-            <input type="password" name="register_password" placeholder="Password" required>
-            <input type="submit" name="register" value="Register">
-        </form>
+        <div class="mb-3">
+            <input type="password" name="register_password" class="form-control" placeholder="Password" required>
+        </div>
+        <div class="mb-3">
+            <select name="role" id="role" class="form-select" onchange="toggleDietitianFields()" required>
+                <option value="">Select Role</option>
+                <option value="user">User</option>
+                <option value="dietitian">Dietitian</option>
+            </select>
+        </div>
 
-        <div class="toggle">
-            <p>Already have an account? <a href="index.php">Login here</a></p>
+        <div id="dietitianFields">
+            <div class="mb-3">
+                <input type="text" name="full_name" class="form-control" placeholder="Full Name">
+            </div>
+            <div class="mb-3">
+                <input type="email" name="contact_email" class="form-control" placeholder="Email Address">
+
+            </div>
         </div>
 
-        <div class="or-container">
-            <span>OR</span>
-        </div>
+        <button type="submit" name="register" class="btn btn-success w-100">Register</button>
+    </form>
 
-        <div class="social-buttons">
-            <a href="https://accounts.google.com" class="gmail-btn">
-                <img src="Googleicon.jpg" alt="Gmail Icon">
-                <span>Google</span>
-            </a>
-            <a href="https://www.facebook.com" class="facebook-btn">
-                <img src="facebook logo.png" alt="Facebook Icon">
-                <span>Facebook</span>
-            </a>
-        </div>
+    <div class="mt-3">
+        <p>Already have an account? <a href="index.php" class="text-success fw-bold">Login</a></p>
+    </div>
+
+    <hr>
+
+    <div class="d-flex flex-column">
+        <a href="https://accounts.google.com" class="btn-social gmail-btn">
+            <img src="image/Googleicon.jpg" alt="Gmail Icon"> Google
+        </a>
+        <a href="https://www.facebook.com" class="btn-social facebook-btn">
+            <img src="image/facebook logo.png" alt="Facebook Icon"> Facebook
+        </a>
     </div>
 </div>
 
