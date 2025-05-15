@@ -5,7 +5,7 @@ ini_set("display_errors", 1);
 
 // Database connection
 $host = "localhost";
-$db = "ep";
+$db = "enterprise";
 $user = "root";
 $pass = "";
 
@@ -56,13 +56,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
             $_SESSION["role"] = $role;
 
             // Redirect based on role
-            if ($role === 'admin') {
+                    if ($role === 'admin') {
                 header("Location: admin_dashboard.php");
+                exit();
+            } elseif ($role === 'dietitian') {
+                header("Location: dietitian_dashboard.php");
                 exit();
             } else {
                 header("Location: dashboard.php");
                 exit();
             }
+
         } else {
             echo "<script>alert('Invalid password.'); window.location.href='login.php';</script>";
         }
@@ -87,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            background-image: url('platebackground.png');
+            background-image: url('image/platebackground.png');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -138,7 +142,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
 
 <div class="card text-dark text-center">
     <div class="logo-container">
-        <img src="platelogin.png" alt="Login Logo">
+        <img src="image/platelogin.png" alt="Login Logo">
     </div>
     <h2 class="mb-3">Login</h2>
     <form action="login.php" method="post">
@@ -162,10 +166,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
 
     <div class="d-flex flex-column">
         <a href="https://accounts.google.com" class="btn-social gmail-btn">
-            <img src="Googleicon.jpg" alt="Gmail Icon"> Google
+            <img src="image/Googleicon.jpg" alt="Gmail Icon"> Google
         </a>
         <a href="https://www.facebook.com" class="btn-social facebook-btn">
-            <img src="facebook logo.png" alt="Facebook Icon"> Facebook
+            <img src="image/facebook logo.png " alt="Facebook Icon"> Facebook
         </a>
     </div>
 </div>

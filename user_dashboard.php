@@ -10,7 +10,7 @@ if (!isset($_SESSION["username"])) {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>NutriTrack ERP | User Dashboard</title>
+  <title>User Dashboard</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="css/styles.css">
   <script src="js/user_meals.js"></script>
@@ -23,26 +23,26 @@ if (!isset($_SESSION["username"])) {
     <!-- Sidebar -->
     <nav class="col-md-3 col-lg-2 d-md-block bg-dark text-white sidebar">
       <div class="sidebar-sticky p-3">
-        <h4 class="text-success font-weight-bold">🥗 Dashboard</h4>
-        <ul class="nav flex-column mt-4">
-          <li class="nav-item"><a class="nav-link text-white" href="#">📅 Health Calendar</a></li>
-          <li class="nav-item"><a class="nav-link text-white" href="#">💬 NutriFit Message Center</a></li>
-          <li class="nav-item"><strong>🍴 Healthy Meal Planner</strong>
+        <h4>📊 Dashboard</h4>
+        <ul class="nav flex-column">
+          <li class="nav-item"><a class="nav-link text-white" href="#">📅 Calendar</a></li>
+          <li class="nav-item"><a class="nav-link text-white" href="#">💬 NutriFit Message</a></li>
+          <li class="nav-item"><strong>🍴 Healthy Menu</strong>
             <ul class="ml-3">
-              <li><a class="nav-link text-white" href="vegetable_menu.php">🥦 Vegetable Menu</a></li>
-              <li><a class="nav-link text-white" href="meat_menu.php">🍖 Meat Menu</a></li>
-              <li><a class="nav-link text-white" href="protein_menu.php">🥚 Protein Menu</a></li>
+              <li><a class="nav-link text-white" href="vegetable_menu.php">🥦 Vegetable</a></li>
+              <li><a class="nav-link text-white" href="meat_menu.php">🍖 Meat</a></li>
+              <li><a class="nav-link text-white" href="protein_menu.php">🥚 Protein</a></li>
             </ul>
           </li>
-          <li class="nav-item"><a class="nav-link text-white" href="profile.php">👤 My Profile</a></li>
-          <li class="nav-item"><a class="nav-link text-white" href="my_selection.php">✅ My Food Selections</a></li>
+          <li class="nav-item"><a class="nav-link text-white" href="my_selection.php">✅ My Vegetable Picks</a></li>
+          <li class="nav-item"><a class="nav-link text-white" href="profile.php">👤 Profile</a></li>
           <li class="nav-item"><a class="nav-link text-danger" href="logout.php">↩️ Logout</a></li>
         </ul>
 
         <!-- Today's Meals Feature -->
         <div class="card bg-light text-dark mt-4">
           <div class="card-header font-weight-bold text-center bg-success text-white py-2">
-            🍽️ Today's Personalized Meals
+            🍽️ Today's Meals
           </div>
           <div class="card-body p-2" style="font-size: 0.85rem;">
             <div class="mb-2">
@@ -72,18 +72,17 @@ if (!isset($_SESSION["username"])) {
 
     <!-- Main Section -->
     <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
-      <h2 class="mt-4">Welcome to NutriTrack ERP, <?php echo htmlspecialchars($_SESSION['username']); ?>!</h2>
-      <p class="text-muted">Your personal hub for nutrition, meals, and health insights.</p>
+      <h2 class="mt-4">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?>!</h2>
 
       <!-- Feature Tiles -->
       <div class="row mt-4">
         <?php
         $tiles = [
-          ["👥 Nutritionist Access", "#"],
-          ["📰 Health Articles", "#"],
-          ["💪 Fitness Programs", "#"],
-          ["🍽️ Meal Monitoring", "#"],
-          ["🧮 BMI & Goals", "#"]
+          ["👥 USER MANAGEMENT", "#"],
+          ["📰 ARTICLES & NEWS", "#"],
+          ["💪 FITNESS TRAINING", "#"],
+          ["🍽️ DIET MAINTENANCE", "#"],
+          ["🧮 BMI CALCULATOR", "#"]
         ];
         foreach ($tiles as $tile) {
           echo '<div class="col-md-4 mb-3">
@@ -96,7 +95,7 @@ if (!isset($_SESSION["username"])) {
       <!-- Meal Logging -->
       <div class="card mt-4">
         <div class="card-header bg-success text-white">
-          🍽️ Log Your Personalized Meal
+          🍽️ Log Your Meal
         </div>
         <div class="card-body">
           <form id="mealForm">
@@ -112,9 +111,13 @@ if (!isset($_SESSION["username"])) {
               <div class="form-group col-md-3">
                 <label>Food Group</label>
                 <select name="food_group" class="form-control">
-                  <option>Vegetable</option>
-                  <option>Meat</option>
                   <option>Protein</option>
+                  <option>Grains</option>
+                  <option>Vegetable</option>
+                  <option>Fruit</option>
+                  <option>Dairy</option>
+                  <option>Fat</option>
+                  <option>Other</option>
                 </select>
               </div>
             </div>
@@ -140,10 +143,10 @@ if (!isset($_SESSION["username"])) {
         </div>
       </div>
 
-      <!-- Health Charts -->
+      <!-- Charts -->
       <div class="card mt-4">
         <div class="card-header bg-primary text-white">
-          📊 Personalized Health Insights
+          📊 Health Charts
         </div>
         <div class="card-body">
           <div class="row">
@@ -162,7 +165,6 @@ if (!isset($_SESSION["username"])) {
           </div>
         </div>
       </div>
-
     </main>
   </div>
 </div>
