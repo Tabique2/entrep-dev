@@ -1,0 +1,228 @@
+<?php
+session_start();
+if (!isset($_SESSION["username"])) {
+    header("Location: login.php");
+    exit();
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Check-In Calendar</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      padding: 20px;
+      background-image: url("image/calendarbackground.png");
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+    }
+
+    .calendar-container {
+      max-width: 800px;
+      margin: auto;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #ccc;
+    }
+
+    .back-button {
+      margin-bottom: 10px;
+    }
+
+    .back-button a {
+      text-decoration: none;
+      font-size: 16px;
+      color: #333;
+      padding: 6px 12px;
+      background-color: #e0e0e0;
+      border-radius: 5px;
+      display: inline-block;
+      transition: background-color 0.3s;
+    }
+
+    .back-button a:hover {
+      background-color: #ccc;
+    }
+
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .calendar-header h2 {
+      margin: 0;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      margin-top: 10px;
+    }
+
+    .day-name, .day {
+      text-align: center;
+      padding: 10px;
+      box-sizing: border-box;
+      border-radius: 5px;
+    }
+
+    .day-name {
+      font-weight: bold;
+      background-color: #f0f0f0;
+      font-size: 14px;
+    }
+
+    .day {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 80px;
+      background: #fafafa;
+      cursor: pointer;
+      border: 1px solid #ddd;
+      transition: background-color 0.3s ease;
+      position: relative;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .day.checked {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .day.missed {
+      background: #f44336;
+      color: white;
+    }
+
+    .day.checked::before {
+      content: "✅";
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      font-size: 18px;
+    }
+
+    .day.missed::before {
+      content: "❌";
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      font-size: 18px;
+    }
+
+    .day:hover {
+      background: #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="calendar-container">
+    <div class="back-button">
+      <a href="dashboard.php">🔙 Back to Dashboard</a>
+    </div>
+
+    <div class="calendar-header">
+      <button onclick="changeMonth(-1)">← Prev</button>
+      <h2 id="month-title">Month Year</h2>
+      <button onclick="changeMonth(1)">Next →</button>
+    </div>
+
+    <div class="calendar-grid" id="calendar-grid"></div>
+  </div>
+
+  <script>
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+    const username = "user123"; // Replace this with PHP session or actual user if needed
+    let checkedDates = [];
+
+    async function fetchCheckins() {
+      const res = await fetch(`checkin_list.php?username=${username}`);
+      checkedDates = await res.json();
+    }
+
+    async function toggleCheckIn(date) {
+      const isChecked = checkedDates.includes(date);
+      const action = isChecked ? 'remove' : 'add';
+
+      await fetch('checkin.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username, date: date, action: action })
+      });
+
+      await loadCalendar();
+    }
+
+    async function loadCalendar() {
+      const monthName = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' });
+      document.getElementById('month-title').textContent = `${monthName} ${currentYear}`;
+
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      dayNames.forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'day-name';
+        div.textContent = d;
+        grid.appendChild(div);
+      });
+
+      await fetchCheckins();
+
+      for (let i = 0; i < firstDay; i++) {
+        const div = document.createElement('div');
+        grid.appendChild(div);
+      }
+
+      for (let d = 1; d <= lastDate; d++) {
+        const date = new Date(currentYear, currentMonth, d);
+        const dateStr = date.toISOString().split('T')[0];
+
+        const div = document.createElement('div');
+        div.className = 'day';
+        div.setAttribute('data-date', dateStr);
+        div.textContent = d;
+
+        if (checkedDates.includes(dateStr)) {
+          div.classList.add('checked');
+        } else {
+          div.classList.add('missed');
+        }
+
+        div.onclick = () => toggleCheckIn(dateStr);
+        grid.appendChild(div);
+      }
+    }
+
+    function changeMonth(offset) {
+      currentMonth += offset;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      } else if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      loadCalendar();
+    }
+
+    loadCalendar();
+  </script>
+</body>
+</html>
+

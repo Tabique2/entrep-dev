@@ -33,30 +33,50 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
     $password = $_POST["login_password"];
 
     // Fetch both password and role from the database
-    $stmt = $conn->prepare("SELECT password, role FROM users WHERE username = ?");
+    $stmt = $conn->prepare("SELECT id, password, role FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $stmt->store_result();
 
     if ($stmt->num_rows === 1) {
-        $stmt->bind_result($hashed_password, $role);
+        $stmt->bind_result($userId, $hashed_password, $role);
         $stmt->fetch();
 
-        // Handle admin login separately for direct password check
-        if ($username == 'admin' && $password == 'adminonly') {
-            $_SESSION["username"] = $username;
-            $_SESSION["role"] = 'admin';
-            header("Location: admin_dashboard.php");
-            exit();
+        // Admin login check - For admin, check if password is valid (even though we use password_hash in DB)
+        if ($username == 'admin') {
+    if ($password === 'adminonly') {
+        // Manually fetch admin user_id if not already fetched
+        $adminIdStmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
+        $adminIdStmt->bind_param("s", $username);
+        $adminIdStmt->execute();
+        $adminIdStmt->bind_result($adminId);
+        $adminIdStmt->fetch();
+        $adminIdStmt->close();
+
+        // If not found in DB, fallback to 0
+        if (!$adminId) {
+            $adminId = 0;
         }
 
-        // Check password for user login using password_verify()
-        if (password_verify($password, $hashed_password)) {
+        $_SESSION["username"] = $username;
+        $_SESSION["role"] = 'admin';
+        $_SESSION["user_id"] = $adminId; // Now it's properly set
+        header("Location: admin_dashboard.php");
+        exit();
+
+            } else {
+                echo "<script>alert('Invalid admin password.'); window.location.href='login.php';</script>";
+            }
+        }
+
+        // For all other users, use password_verify()
+        else if (password_verify($password, $hashed_password)) {
             $_SESSION["username"] = $username;
             $_SESSION["role"] = $role;
+            $_SESSION["user_id"] = $userId;
 
             // Redirect based on role
-                    if ($role === 'admin') {
+            if ($role === 'admin') {
                 header("Location: admin_dashboard.php");
                 exit();
             } elseif ($role === 'dietitian') {
@@ -66,7 +86,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
                 header("Location: dashboard.php");
                 exit();
             }
-
         } else {
             echo "<script>alert('Invalid password.'); window.location.href='login.php';</script>";
         }
