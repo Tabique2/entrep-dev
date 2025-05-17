@@ -38,7 +38,7 @@ if ($message !== "") {
     $_SESSION['message_status'] = "Message cannot be empty.";
 }
 
-// Redirect back to the previous page (dietitian dashboard or any previous page)
+// Redirect back to the previous page
 header("Location: " . $_SERVER['HTTP_REFERER']);
 exit();
 ?>
