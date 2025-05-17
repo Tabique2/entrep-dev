@@ -1,228 +1,188 @@
 <?php
 session_start();
+include('db.php'); // DB connection file
+
 if (!isset($_SESSION["username"])) {
     header("Location: login.php");
     exit();
 }
-?>
 
+$username = $_SESSION['username'];
+
+// Function to fetch all diet plans
+function fetchAllDietPlans($username, $month, $year, $conn) {
+    $start_date = "$year-" . str_pad($month, 2, '0', STR_PAD_LEFT) . "-01";
+    $end_date = "$year-" . str_pad($month, 2, '0', STR_PAD_LEFT) . "-31";
+
+    $stmt = $conn->prepare("
+        SELECT dish_name, meal_time, meal_date 
+        FROM diet_plans 
+        WHERE user_id = (SELECT id FROM users WHERE username = ?) 
+        AND meal_date BETWEEN ? AND ?
+    ");
+    $stmt->bind_param("sss", $username, $start_date, $end_date);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $dietPlans = [];
+    while ($row = $result->fetch_assoc()) {
+        $formattedMeal = ucfirst($row['meal_time']) . ": " . $row['dish_name'];
+        $dietPlans[$row['meal_date']][] = $formattedMeal;
+    }
+
+    return $dietPlans;
+}
+
+$dietPlans = fetchAllDietPlans($username, date('m'), date('Y'), $conn);
+$dietPlansJson = json_encode($dietPlans);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Check-In Calendar</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
-      padding: 20px;
-      background-image: url("image/calendarbackground.png");
-      background-size: cover;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-    }
+    <meta charset="UTF-8">
+    <title>Your Diet Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url("image/calendarbackground.png");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            padding: 20px;
+        }
 
-    .calendar-container {
-      max-width: 800px;
-      margin: auto;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px #ccc;
-    }
+        .calendar-container {
+            max-width: 900px;
+            margin: auto;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px #ccc;
+        }
 
-    .back-button {
-      margin-bottom: 10px;
-    }
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
 
-    .back-button a {
-      text-decoration: none;
-      font-size: 16px;
-      color: #333;
-      padding: 6px 12px;
-      background-color: #e0e0e0;
-      border-radius: 5px;
-      display: inline-block;
-      transition: background-color 0.3s;
-    }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
 
-    .back-button a:hover {
-      background-color: #ccc;
-    }
+        .day {
+            height: 100px;
+            border: 1px solid #ddd;
+            background: #fafafa;
+            position: relative;
+            padding: 5px;
+            font-size: 14px;
+            overflow-y: auto;
+        }
 
-    .calendar-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+        .diet-plan {
+            background: #cceeff;
+            padding: 3px;
+            margin-top: 4px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
 
-    .calendar-header h2 {
-      margin: 0;
-    }
+        .day-name {
+            font-weight: bold;
+            text-align: center;
+            background-color: #f1f1f1;
+        }
 
-    .calendar-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 5px;
-      margin-top: 10px;
-    }
-
-    .day-name, .day {
-      text-align: center;
-      padding: 10px;
-      box-sizing: border-box;
-      border-radius: 5px;
-    }
-
-    .day-name {
-      font-weight: bold;
-      background-color: #f0f0f0;
-      font-size: 14px;
-    }
-
-    .day {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 80px;
-      background: #fafafa;
-      cursor: pointer;
-      border: 1px solid #ddd;
-      transition: background-color 0.3s ease;
-      position: relative;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .day.checked {
-      background: #4CAF50;
-      color: white;
-    }
-
-    .day.missed {
-      background: #f44336;
-      color: white;
-    }
-
-    .day.checked::before {
-      content: "✅";
-      position: absolute;
-      top: 5px;
-      left: 5px;
-      font-size: 18px;
-    }
-
-    .day.missed::before {
-      content: "❌";
-      position: absolute;
-      top: 5px;
-      left: 5px;
-      font-size: 18px;
-    }
-
-    .day:hover {
-      background: #ddd;
-    }
-  </style>
+        .back-button {
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
-  <div class="calendar-container">
+<div class="calendar-container">
     <div class="back-button">
-      <a href="dashboard.php">🔙 Back to Dashboard</a>
+        <a href="dashboard.php">🔙 Back to Dashboard</a>
     </div>
 
     <div class="calendar-header">
-      <button onclick="changeMonth(-1)">← Prev</button>
-      <h2 id="month-title">Month Year</h2>
-      <button onclick="changeMonth(1)">Next →</button>
+        <button onclick="changeMonth(-1)">← Prev</button>
+        <h2 id="month-title">Month Year</h2>
+        <button onclick="changeMonth(1)">Next →</button>
     </div>
 
     <div class="calendar-grid" id="calendar-grid"></div>
-  </div>
+</div>
 
-  <script>
-    let currentMonth = new Date().getMonth();
-    let currentYear = new Date().getFullYear();
-    const username = "user123"; // Replace this with PHP session or actual user if needed
-    let checkedDates = [];
+<script>
+let dietPlans = <?= $dietPlansJson ?>;
 
-    async function fetchCheckins() {
-      const res = await fetch(`checkin_list.php?username=${username}`);
-      checkedDates = await res.json();
-    }
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
 
-    async function toggleCheckIn(date) {
-      const isChecked = checkedDates.includes(date);
-      const action = isChecked ? 'remove' : 'add';
+function loadCalendar() {
+    const monthName = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' });
+    document.getElementById('month-title').textContent = `${monthName} ${currentYear}`;
 
-      await fetch('checkin.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username, date: date, action: action })
-      });
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-      await loadCalendar();
-    }
+    const grid = document.getElementById('calendar-grid');
+    grid.innerHTML = '';
 
-    async function loadCalendar() {
-      const monthName = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' });
-      document.getElementById('month-title').textContent = `${monthName} ${currentYear}`;
-
-      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-      const lastDate = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-      const grid = document.getElementById('calendar-grid');
-      grid.innerHTML = '';
-
-      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      dayNames.forEach(d => {
+    // Add day names
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    dayNames.forEach(day => {
         const div = document.createElement('div');
         div.className = 'day-name';
-        div.textContent = d;
+        div.textContent = day;
         grid.appendChild(div);
-      });
+    });
 
-      await fetchCheckins();
+    // Empty cells before the first day
+    for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement('div');
+        grid.appendChild(empty);
+    }
 
-      for (let i = 0; i < firstDay; i++) {
-        const div = document.createElement('div');
-        grid.appendChild(div);
-      }
-
-      for (let d = 1; d <= lastDate; d++) {
+    // Fill the days
+    for (let d = 1; d <= lastDate; d++) {
         const date = new Date(currentYear, currentMonth, d);
         const dateStr = date.toISOString().split('T')[0];
 
         const div = document.createElement('div');
         div.className = 'day';
-        div.setAttribute('data-date', dateStr);
-        div.textContent = d;
+        div.innerHTML = `<strong>${d}</strong>`;
 
-        if (checkedDates.includes(dateStr)) {
-          div.classList.add('checked');
-        } else {
-          div.classList.add('missed');
+        if (dietPlans[dateStr]) {
+            dietPlans[dateStr].forEach(plan => {
+                const planDiv = document.createElement('div');
+                planDiv.className = 'diet-plan';
+                planDiv.textContent = plan;
+                div.appendChild(planDiv);
+            });
         }
 
-        div.onclick = () => toggleCheckIn(dateStr);
         grid.appendChild(div);
-      }
     }
+}
 
-    function changeMonth(offset) {
-      currentMonth += offset;
-      if (currentMonth < 0) {
+function changeMonth(offset) {
+    currentMonth += offset;
+    if (currentMonth < 0) {
         currentMonth = 11;
         currentYear--;
-      } else if (currentMonth > 11) {
+    } else if (currentMonth > 11) {
         currentMonth = 0;
         currentYear++;
-      }
-      loadCalendar();
     }
-
     loadCalendar();
-  </script>
+}
+
+loadCalendar();
+</script>
 </body>
 </html>
-
