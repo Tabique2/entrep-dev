@@ -16,6 +16,8 @@
     <script src="js/user_meals.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/user_charts.js"></script>
+    <form id="mealForm" action="log_meal.php" method="POST">
+
 
   </head>
   <body>

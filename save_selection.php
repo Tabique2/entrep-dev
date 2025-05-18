@@ -1,6 +1,7 @@
 <?php
 session_start();
 
+// Redirect to login if user is not authenticated
 if (!isset($_SESSION["username"])) {
     header("Location: login.php");
     exit();
@@ -12,6 +13,8 @@ $db = "enterprise";
 $user = "root";
 $pass = "";
 $conn = new mysqli($host, $user, $pass, $db);
+
+// Check connection
 if ($conn->connect_error) {
     die("Database connection failed: " . $conn->connect_error);
 }
@@ -29,10 +32,12 @@ if (!$userId) {
     die("User ID not found.");
 }
 
-// Function to insert dishes into DB
+// Function to insert selected dishes (avoiding duplicates)
 function saveDishes($conn, $userId, $category, $dishes) {
     foreach ($dishes as $dish) {
-        // Avoid duplicates
+        $dish = trim($dish); // Sanitize dish name
+
+        // Check if already selected
         $check = $conn->prepare("SELECT id FROM user_dish_selections WHERE user_id = ? AND category = ? AND dish_name = ?");
         $check->bind_param("iss", $userId, $category, $dish);
         $check->execute();
@@ -49,28 +54,32 @@ function saveDishes($conn, $userId, $category, $dishes) {
     }
 }
 
-// Save selections to SESSION and DB
-if (isset($_POST['selected_dishes'])) {
+// Save vegetable selection
+if (isset($_POST['selected_dishes']) && is_array($_POST['selected_dishes'])) {
     $_SESSION['selected_vegetables'] = $_POST['selected_dishes'];
     saveDishes($conn, $userId, 'vegetable', $_POST['selected_dishes']);
     $_SESSION['message'] = "Vegetable selection saved successfully!";
 }
 
-if (isset($_POST['selected_meats'])) {
+// Save meat selection
+if (isset($_POST['selected_meats']) && is_array($_POST['selected_meats'])) {
     $_SESSION['selected_meats'] = $_POST['selected_meats'];
     saveDishes($conn, $userId, 'meat', $_POST['selected_meats']);
     $_SESSION['message'] = "Meat selection saved successfully!";
 }
 
-if (isset($_POST['selected_proteins'])) {
+// Save protein selection
+if (isset($_POST['selected_proteins']) && is_array($_POST['selected_proteins'])) {
     $_SESSION['selected_proteins'] = $_POST['selected_proteins'];
     saveDishes($conn, $userId, 'protein', $_POST['selected_proteins']);
     $_SESSION['message'] = "Protein selection saved successfully!";
 }
 
+// Close the database connection
 $conn->close();
 
-// Redirect back
-header("Location: " . $_SERVER["HTTP_REFERER"]);
+// Redirect back to the referring page or fallback
+$redirectTo = isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : "dashboard.php";
+header("Location: $redirectTo");
 exit();
 ?>

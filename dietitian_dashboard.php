@@ -45,6 +45,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_dish_id'])) {
     exit();
 }
 
+// Handle meal log deletion
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_meal_log_id'])) {
+    $deleteLogId = intval($_POST['delete_meal_log_id']);
+    $stmt = $conn->prepare("DELETE FROM user_logged_meals WHERE id = ?");
+    $stmt->bind_param("i", $deleteLogId);
+    $stmt->execute();
+    $stmt->close();
+    $_SESSION['message_status'] = "Meal log deleted.";
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
+
 // Handle sending or replying to message
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['message'])) {
     $receiver_id = intval($_POST['user_id']);
@@ -66,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['me
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_meal_btn'])) {
     $mealUserId = intval($_POST['meal_user_id']);
     $mealDate = $_POST['meal_date'];
-    $mealTime = $_POST['meal_time']; // ✅ Get meal time from form
+    $mealTime = $_POST['meal_time'];
     $mealPlan = trim($_POST['meal_plan']);
 
     if (!empty($mealPlan) && !empty($mealDate) && !empty($mealTime)) {
@@ -85,7 +97,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_meal_btn'])) {
     header("Location: " . $_SERVER['PHP_SELF']);
     exit();
 }
-
 
 // Fetch users
 $userQuery = "SELECT id, username, role FROM users WHERE role = 'user'";
@@ -122,6 +133,15 @@ $messageResult = $conn->query($messageQuery);
 
 // Fetch dietitians
 $dietitianResult = $conn->query("SELECT id, username FROM users WHERE role = 'dietitian'");
+
+// Fetch user meal logs
+$mealLogQuery = "
+    SELECT l.id, u.username, l.food_name, l.quantity, l.category, l.protein, l.carbs, l.fat, l.logged_at
+    FROM user_logged_meals l
+    JOIN users u ON l.user_id = u.id
+    ORDER BY l.logged_at DESC
+";
+$mealLogs = $conn->query($mealLogQuery);
 ?>
 
 <!DOCTYPE html>
@@ -152,7 +172,7 @@ $dietitianResult = $conn->query("SELECT id, username FROM users WHERE role = 'di
         <div class="alert alert-info"><?= $_SESSION['message_status']; unset($_SESSION['message_status']); ?></div>
     <?php endif; ?>
 
-    <!-- Registered Users -->
+    <!-- Users -->
     <div class="section-card">
         <h4>📋 Registered Users</h4>
         <table class="table table-bordered text-center">
@@ -169,7 +189,7 @@ $dietitianResult = $conn->query("SELECT id, username FROM users WHERE role = 'di
         </table>
     </div>
 
-    <!-- BMI Info -->
+    <!-- BMI -->
     <div class="section-card">
         <h4>📊 BMI Information</h4>
         <table class="table table-bordered text-center">
@@ -219,46 +239,45 @@ $dietitianResult = $conn->query("SELECT id, username FROM users WHERE role = 'di
         </table>
     </div>
 
-   <!-- Add Meal -->
-<div class="section-card">
-    <h4>📆 Add Meal to User Calendar</h4>
-    <form method="POST">
-        <div class="row mb-2">
-            <div class="col-md-3">
-                <label class="form-label">User</label>
-                <select name="meal_user_id" class="form-select" required>
-                    <option value="">Select user</option>
-                    <?php
-                    $userResult = $conn->query("SELECT id, username FROM users WHERE role = 'user'");
-                    while ($u = $userResult->fetch_assoc()):
-                    ?>
-                        <option value="<?= $u['id'] ?>"><?= htmlspecialchars($u['username']) ?></option>
-                    <?php endwhile; ?>
-                </select>
+    <!-- Add Meal -->
+    <div class="section-card">
+        <h4>📆 Add Meal to User Calendar</h4>
+        <form method="POST">
+            <div class="row mb-2">
+                <div class="col-md-3">
+                    <label class="form-label">User</label>
+                    <select name="meal_user_id" class="form-select" required>
+                        <option value="">Select user</option>
+                        <?php
+                        $userResult = $conn->query("SELECT id, username FROM users WHERE role = 'user'");
+                        while ($u = $userResult->fetch_assoc()):
+                        ?>
+                            <option value="<?= $u['id'] ?>"><?= htmlspecialchars($u['username']) ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Date</label>
+                    <input type="date" name="meal_date" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Meal Time</label>
+                    <select name="meal_time" class="form-select" required>
+                        <option value="">Select meal time</option>
+                        <option value="breakfast">Breakfast</option>
+                        <option value="lunch">Lunch</option>
+                        <option value="dinner">Dinner</option>
+                        <option value="snack">Snack</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Meal Plan</label>
+                    <input type="text" name="meal_plan" class="form-control" placeholder="Enter meal details..." required>
+                </div>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Date</label>
-                <input type="date" name="meal_date" class="form-control" required>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Meal Time</label>
-                <select name="meal_time" class="form-select" required>
-                    <option value="">Select meal time</option>
-                    <option value="breakfast">Breakfast</option>
-                    <option value="lunch">Lunch</option>
-                    <option value="dinner">Dinner</option>
-                    <option value="snack">Snack</option>
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">Meal Plan</label>
-                <input type="text" name="meal_plan" class="form-control" placeholder="Enter meal details..." required>
-            </div>
-        </div>
-        <button type="submit" name="add_meal_btn" class="btn btn-success">Add Meal</button>
-    </form>
-</div>
-
+            <button type="submit" name="add_meal_btn" class="btn btn-success">Add Meal</button>
+        </form>
+    </div>
 
     <!-- Inbox -->
     <div class="section-card">
@@ -291,6 +310,46 @@ $dietitianResult = $conn->query("SELECT id, username FROM users WHERE role = 'di
                 </tbody>
             </table>
         <?php else: ?><p>No messages found.</p><?php endif; ?>
+    </div>
+
+    <!-- Meal Logs -->
+    <div class="section-card">
+        <h4>📘 User Meal Logs</h4>
+        <table class="table table-bordered text-center">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Food</th>
+                    <th>Category</th>
+                    <th>Qty</th>
+                    <th>Protein (g)</th>
+                    <th>Carbs (g)</th>
+                    <th>Fat (g)</th>
+                    <th>Logged At</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php while ($log = $mealLogs->fetch_assoc()): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($log['username']) ?></td>
+                        <td><?= htmlspecialchars($log['food_name']) ?></td>
+                        <td><?= htmlspecialchars($log['category']) ?></td>
+                        <td><?= $log['quantity'] ?></td>
+                        <td><?= $log['protein'] ?></td>
+                        <td><?= $log['carbs'] ?></td>
+                        <td><?= $log['fat'] ?></td>
+                        <td><?= $log['logged_at'] ?></td>
+                        <td>
+                            <form method="POST" onsubmit="return confirm('Delete this meal log?');">
+                                <input type="hidden" name="delete_meal_log_id" value="<?= $log['id'] ?>">
+                                <button class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
     </div>
 </div>
 
