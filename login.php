@@ -16,57 +16,59 @@ if ($conn->connect_error) {
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
-    // 1. CAPTCHA Verification
-    $recaptchaResponse = $_POST['g-recaptcha-response'];
-    $secretKey = '6LfDezQrAAAAALzoUGd3WZd2Ct0ORXedwjBO4Gqn';
-    $verifyUrl = "https://www.google.com/recaptcha/api/siteverify";
-    $verifyResponse = file_get_contents("$verifyUrl?secret=$secretKey&response=$recaptchaResponse");
-    $responseData = json_decode($verifyResponse);
-
-    if (!$responseData->success) {
-        echo "<script>alert('Captcha verification failed. Please try again.'); window.location.href='login.php';</script>";
-        exit();
-    }
-
-    // 2. Credential Verification
     $username = $_POST["login_username"];
     $password = $_POST["login_password"];
 
     // Fetch both password and role from the database
-    $stmt = $conn->prepare("SELECT password, role FROM users WHERE username = ?");
+    $stmt = $conn->prepare("SELECT id, password, role FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $stmt->store_result();
 
     if ($stmt->num_rows === 1) {
-        $stmt->bind_result($hashed_password, $role);
+        $stmt->bind_result($userId, $hashed_password, $role);
         $stmt->fetch();
 
-        // Handle admin login separately for direct password check
-        if ($username == 'admin' && $password == 'adminonly') {
-            $_SESSION["username"] = $username;
-            $_SESSION["role"] = 'admin';
-            header("Location: admin_dashboard.php");
-            exit();
-        }
+        // Admin hardcoded check
+        if ($username == 'admin') {
+            if ($password === 'adminonly') {
+                $adminIdStmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
+                $adminIdStmt->bind_param("s", $username);
+                $adminIdStmt->execute();
+                $adminIdStmt->bind_result($adminId);
+                $adminIdStmt->fetch();
+                $adminIdStmt->close();
 
-        // Check password for user login using password_verify()
-        if (password_verify($password, $hashed_password)) {
-            $_SESSION["username"] = $username;
-            $_SESSION["role"] = $role;
+                if (!$adminId) {
+                    $adminId = 0;
+                }
 
-            // Redirect based on role
-                    if ($role === 'admin') {
+                $_SESSION["username"] = $username;
+                $_SESSION["role"] = 'admin';
+                $_SESSION["user_id"] = $adminId;
                 header("Location: admin_dashboard.php");
                 exit();
-            } elseif ($role === 'dietitian') {
-                header("Location: dietitian_dashboard.php");
-                exit();
             } else {
-                header("Location: dashboard.php");
+                echo "<script>alert('Invalid admin password.'); window.location.href='login.php';</script>";
                 exit();
             }
+        }
 
+        // Other users
+        elseif (password_verify($password, $hashed_password)) {
+            $_SESSION["username"] = $username;
+            $_SESSION["role"] = $role;
+            $_SESSION["user_id"] = $userId;
+
+            // Redirect based on role
+            if ($role === 'admin') {
+                header("Location: admin_dashboard.php");
+            } elseif ($role === 'dietitian') {
+                header("Location: dietitian_dashboard.php");
+            } else {
+                header("Location: dashboard.php");
+            }
+            exit();
         } else {
             echo "<script>alert('Invalid password.'); window.location.href='login.php';</script>";
         }
@@ -87,7 +89,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
     <title>Login</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -152,9 +153,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
         <div class="mb-3">
             <input type="password" name="login_password" class="form-control" placeholder="Password" required>
         </div>
-        <div class="mb-3 d-flex justify-content-center">
-            <div class="g-recaptcha" data-sitekey="6LfDezQrAAAAAAYlNZx5iLWnZEMDztRcwYz3a5ns"></div>
-        </div>
         <button type="submit" name="login" class="btn btn-success w-100">Login</button>
     </form>
 
@@ -169,7 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["login"])) {
             <img src="image/Googleicon.jpg" alt="Gmail Icon"> Google
         </a>
         <a href="https://www.facebook.com" class="btn-social facebook-btn">
-            <img src="image/facebook logo.png " alt="Facebook Icon"> Facebook
+            <img src="image/facebook logo.png" alt="Facebook Icon"> Facebook
         </a>
     </div>
 </div>
