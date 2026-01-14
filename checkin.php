@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 $data = json_decode(file_get_contents("php://input"), true);
 
 $host = "localhost";
-$db = "ep";
+$db = "enterprise";
 $user = "root";
 $pass = "";
 $conn = new mysqli($host, $user, $pass, $db);

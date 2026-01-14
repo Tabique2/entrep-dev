@@ -10,7 +10,7 @@ if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'admin') {
 }
 
 $host = "localhost";
-$db = "ep";
+$db = "enterprise";
 $user = "root";
 $pass = "";
 
